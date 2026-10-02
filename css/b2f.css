@@ -90,15 +90,6 @@
 .delegation-bar svg{color:var(--signature)}
 .delegation-bar strong{font-weight:700}
 
-/* Bandeau de démonstration — honnêteté du POC (risque R7) */
-.demo-bar{
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  background:var(--warning-soft);color:var(--text);
-  border-bottom:1px solid var(--warning);padding:8px 16px;font-size:12.5px;font-weight:600;
-}
-.demo-bar .demo-controls{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
-.demo-bar select{font:inherit;font-size:12.5px;padding:5px 9px;border-radius:5px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text)}
-
 /* Couloir origine → destination */
 .corridor-cell{display:flex;align-items:center;gap:8px;white-space:nowrap}
 .corridor-cell svg{color:var(--text-muted);width:15px;height:15px}
@@ -227,15 +218,9 @@
 @keyframes toast-in{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.toast{animation:none}}
 
-/* ==========================  Bandeau de démonstration du produit  ==========
-   La maquette place ce bandeau hors du shell, ce qui décalait la barre
-   latérale de sa hauteur : son pied — identité et déconnexion — sortait de
-   l'écran. Le bandeau est collant en tête, et le shell en tient compte. */
-.demo-bar-slim{
-  position:sticky;top:0;z-index:40;
-  height:var(--demo-h);padding:0 16px;font-size:12px;
-}
-.demo-bar-slim svg{flex:none;color:var(--warning)}
+/* ==========================  Calage du shell  ==============================
+   Le bandeau de démonstration qui coiffait l'écran a été retiré ; `--demo-h`
+   vaut désormais zéro et ces calculs restent justes sans réserver de place. */
 .app-shell{min-height:calc(100vh - var(--demo-h))}
 .app-shell .sidebar{height:calc(100vh - var(--demo-h));top:var(--demo-h)}
 .app-shell .topbar{top:var(--demo-h)}

@@ -310,21 +310,6 @@ function piedDePage() {
 }
 
 /**
- * Bandeau de démonstration réduit, présent dans le produit (parade R7).
- * @returns {HTMLElement}
- */
-export function bandeauDemo() {
-  return el('div.demo-bar.demo-bar-slim', { role: 'region', 'aria-label': 'Nature du produit' }, [
-    icone('alert', 15),
-    el('span', {
-      text:
-        'PREUVE DE CONCEPT — données fictives « DÉMO ». Ne reflète aucune entreprise ' +
-        'réelle et ne constitue pas un système de production.',
-    }),
-  ]);
-}
-
-/**
  * Pose le shell dans la page.
  * @param {HTMLElement} noeud
  */

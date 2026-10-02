@@ -8,21 +8,26 @@
 <meta name="color-scheme" content="light dark">
 
 <!-- Politique de sécurité du contenu, en balise : GitHub Pages ne permet aucun
-     en-tête HTTP personnalisé. Identique à celle posée par nginx dans le
-     Dockerfile, moins `frame-ancestors`, qu'une balise ne peut pas porter (le
-     déploiement conteneurisé continue de l'imposer par en-tête). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
+     en-tete HTTP personnalise. Identique a celle posee par nginx dans le
+     Dockerfile, moins `frame-ancestors`, qu'une balise ne peut pas porter.
+
+     Les hotes distants sont ceux dont la cartographie depend : le moteur
+     MapLibre servi par unpkg, les tuiles OpenStreetMap, le relief Mazen/AWS et
+     le calcul d'itineraire OSRM. `worker-src blob:` est exige par MapLibre, qui
+     fabrique ses workers a partir d'un Blob. Sans ces autorisations la carte
+     bascule sur son repli simplifie. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; img-src 'self' data: blob: https://tile.openstreetmap.org https://s3.amazonaws.com; font-src 'self'; connect-src 'self' https://unpkg.com https://tile.openstreetmap.org https://s3.amazonaws.com https://router.project-osrm.org; worker-src 'self' blob:; child-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 
 <!-- Jetons d'abord : un SEUL fichier declare `:root`. Le POC DUT en charge onze,
      dont trois redefinissent `:root` en entier — on ne reproduit pas (D33). -->
-<link rel="stylesheet" href="css/tokens.css?v=20261001-radius">
+<link rel="stylesheet" href="css/tokens.css?v=20261002-sans-bandeau-1">
 <link rel="stylesheet" href="css/base.css">
 <link rel="stylesheet" href="css/layout.css">
 <link rel="stylesheet" href="css/components.css?v=20261001-hover">
 <link rel="stylesheet" href="css/forms.css">
-<link rel="stylesheet" href="css/b2f.css">
+<link rel="stylesheet" href="css/b2f.css?v=20261002-sans-bandeau-1">
 <link rel="stylesheet" href="css/explorer.css">
-<link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/responsive.css?v=20261002-sans-bandeau-1">
 <link rel="stylesheet" href="css/accueil.css?v=20260930-menu-glass">
 <link rel="stylesheet" href="css/glass.css?v=20260930-1">
 <link rel="stylesheet" href="css/accueil-transhub.css?v=20261001-hero-4">
@@ -106,8 +111,8 @@
 
 <script src="js/vendor/jspdf.umd.min.js"></script>
 <script type="importmap">
-{"imports": {"./js/views/explorer.js": "./js/views/explorer.js?v=20261001-explore-map-2", "./js/core/ui.js": "./js/core/ui.js?v=20261001-kpi-icons-1", "./js/domain/schema.js": "./js/domain/schema.js?v=20261001-flotte-trajet-1", "./js/services/flotte.service.js": "./js/services/flotte.service.js?v=20261001-flotte-trajet-1", "./js/views/transporteur.js": "./js/views/transporteur.js?v=20261001-flotte-trajet-2", "./js/views/tendances-dashboard.js": "./js/views/tendances-dashboard.js?v=20261001-indicateurs-1", "./js/views/dashboard-affreteur.js?v=20261001-white": "./js/views/dashboard-affreteur.js?v=20261001-supervision-1", "./js/core/nav.js": "./js/core/nav.js?v=20261001-dut-1", "./js/core/layout.js?v=20261001-harmonisation-2": "./js/core/layout.js?v=20261001-icons-all-1", "./js/views/flotte.js": "./js/views/flotte.js?v=20261001-flotte-trajet-1", "./js/views/flotte-donnees.js": "./js/views/flotte-donnees.js?v=20261001-flotte-trajet-1", "./js/views/supervision.js": "./js/views/supervision.js?v=20261001-directory-2", "./js/views/affreteur.js": "./js/views/affreteur.js?v=20261001-dut-1", "./js/views/dut.js": "./js/views/dut.js?v=20261002-dut-pdf-1", "./js/services/dut.service.js": "./js/services/dut.service.js?v=20261001-dut-1", "./js/views/commun.js?v=20261001-harmonisation-2": "./js/views/commun.js?v=20261001-dut-1"}}
+{"imports": {"./js/views/explorer.js": "./js/views/explorer.js?v=20261001-explore-map-2", "./js/core/ui.js": "./js/core/ui.js?v=20261001-kpi-icons-1", "./js/domain/schema.js": "./js/domain/schema.js?v=20261001-flotte-trajet-1", "./js/services/flotte.service.js": "./js/services/flotte.service.js?v=20261001-flotte-trajet-1", "./js/views/transporteur.js": "./js/views/transporteur.js?v=20261001-flotte-trajet-2", "./js/views/tendances-dashboard.js": "./js/views/tendances-dashboard.js?v=20261001-indicateurs-1", "./js/views/dashboard-affreteur.js?v=20261001-white": "./js/views/dashboard-affreteur.js?v=20261001-supervision-1", "./js/core/nav.js": "./js/core/nav.js?v=20261001-dut-1", "./js/core/layout.js?v=20261002-sans-bandeau-1": "./js/core/layout.js?v=20261002-sans-bandeau-1", "./js/views/flotte.js": "./js/views/flotte.js?v=20261001-flotte-trajet-1", "./js/views/flotte-donnees.js": "./js/views/flotte-donnees.js?v=20261001-flotte-trajet-1", "./js/views/supervision.js": "./js/views/supervision.js?v=20261001-directory-2", "./js/views/affreteur.js": "./js/views/affreteur.js?v=20261001-dut-1", "./js/views/dut.js": "./js/views/dut.js?v=20261002-dut-pdf-1", "./js/services/dut.service.js": "./js/services/dut.service.js?v=20261001-dut-1", "./js/views/commun.js?v=20261001-harmonisation-2": "./js/views/commun.js?v=20261001-dut-1"}}
 </script>
-<script type="module" src="js/app.js?v=20261002-dut-pdf-1"></script>
+<script type="module" src="js/app.js?v=20261002-sans-bandeau-1"></script>
 </body>
 </html>

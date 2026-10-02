@@ -64,7 +64,7 @@
 
   /* ---- Layout ---- */
   --rail-w:70px;
-  --demo-h:34px;
+  --demo-h:0px; /* bandeau de demonstration retire */
   --side-w:318px;
   --top-h:78px;
 

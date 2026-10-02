@@ -8,7 +8,7 @@ import { accueil } from './views/accueil.js?v=20261001-scroll-2';
  */
 
 import { el, remplacer } from './core/dom.js';
-import { appliquerTheme, bandeauDemo, monter, shell } from './core/layout.js?v=20261001-harmonisation-2';
+import { appliquerTheme, monter, shell } from './core/layout.js?v=20261001-harmonisation-2';
 import { aller, declarer, demarrer, routeCourante } from './core/router.js';
 import { routeAccueil } from './core/nav.js';
 import { installerSentinelle } from './core/sentinelle.js';
@@ -134,7 +134,6 @@ function rendre(ctx, vue, contenu) {
 
   monter(
     el('div', {}, [
-      bandeauDemo(),
       shell({
         ctx,
         zoneActive: vue.zone?.id ?? '',
@@ -160,7 +159,6 @@ function afficherLogin(traiter) {
   const intention = routeCourante().params;
   monter(
     el('div', {}, [
-      bandeauDemo(),
       login(async (email, mdp) => {
         const ctx = await connecter(email, mdp);
         toast(`Bienvenue. Espace ouvert.`);
@@ -218,10 +216,10 @@ async function demarrerApplication() {
   const traiter = demarrer({
     contexte: () => contexteCourant() ?? reprendreSession(),
     surLogin: () => afficherLogin(() => traiter()),
-    surAccueil: ctx => { monter(el('div', {}, [bandeauDemo(), accueil(ctx)])); window.scrollTo(0,0); },
+    surAccueil: ctx => { monter(accueil(ctx)); window.scrollTo(0,0); },
     surPublic: (ctx, params) => {
       const focus = document.activeElement?.dataset?.focus;
-      const vue = el('div', {}, [bandeauDemo(), explorer(ctx, params)]);
+      const vue = explorer(ctx, params);
       monter(vue);
       if (focus) [...vue.querySelectorAll('[data-focus]')]
         .find(n => n.dataset.focus === focus)?.focus({ preventScroll:true });

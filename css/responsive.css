@@ -19,13 +19,6 @@
   .wizard{grid-template-columns:1fr}
   .ops-grid{grid-template-columns:minmax(0,1fr)}
   .live-recap{position:static;order:-1}
-  /* Le bandeau de démonstration a une hauteur fixe, pensée pour une seule ligne.
-     Sur petit écran son texte en prend trois : il débordait par-dessus la barre
-     supérieure et recouvrait le bouton de menu. */
-  .demo-bar-slim{
-    position:static;height:auto;min-height:var(--demo-h);
-    padding:8px 16px;line-height:1.4;align-items:flex-start;
-  }
   .app-shell .topbar{top:0}
   .app-shell .sidebar{top:0;height:100vh}
 }

@@ -1,50 +1,49 @@
 /**
- * Gabarit PDF du Document Unique de Transport — **port du POC DUT**.
+ * Gabarit PDF du Document Unique de Transport — **version enrichie**.
  *
- * Origine : `POC_OIC/DUT/js/services/dut-pdf-layout.js` (+ `dut-print.service.js`
- * pour `COPIES` et l'état d'impression). Les coordonnées millimétriques, l'ordre
- * des dix sections, le recto-verso et les annexes de débordement sont reproduits
- * à l'identique : c'est le gabarit qui a été présenté à l'OIC, et un gabarit
- * redessiné ne serait plus le même document.
+ * Reproduit les planches de référence du POC DUT :
+ * `POC_OIC/DUT/docs/Après — recto enrichi.pdf`, `… verso enrichi.pdf`,
+ * `Le document dit son état.pdf` et `Dispositif anti-falsification.pdf`.
+ *
+ * ## Ce que le gabarit reprend des planches
+ *
+ * 1. **En-tête institutionnel** : armoiries, devise, bandeau pleine largeur et
+ *    bande guillochée — marque n° 1 du dispositif anti-falsification.
+ * 2. **Bloc d'identification** : numéro en chiffres monospacés, pastille d'état,
+ *    rang d'impression (marque n° 6), antenne, partenaire, plage d'attribution.
+ * 3. **Dix sections numérotées**, titres capitalisés et filetés, libellés en
+ *    petites capitales grises, valeurs en gras ou en chiffres monospacés.
+ * 4. **Empreinte SHA-256 en pied de page** (marque n° 5) et **micro-texte de
+ *    bord** reprenant le numéro (marque n° 7).
+ * 5. **Mention d'exemplaire** nommée, jamais un PDF anonyme (marque n° 8).
+ *
+ * ## L'état du document, et ce qu'il vaut ici
+ *
+ * La planche « Le document dit son état » décrit quatre traitements : validé,
+ * suspendu, retiré, et **épreuve de travail**. B2F ne connaît que le dernier :
+ * aucune fiche n'est attribuée par l'Office, aucun jeton de vérification n'est
+ * émis. Le document porte donc le bandeau ardoise « Épreuve de travail », la
+ * mention « NON OFFICIEL », le filigrane « SANS VALEUR », un encadré pointillé
+ * « Aucun QR » et un numéro grisé. **C'est le traitement prévu par la planche
+ * pour ce cas, pas une approximation.**
+ *
+ * ## Donnée absente : la case reste vide
+ *
+ * B2F ne porte ni colis, ni volume, ni valeur, ni facturation, ni marchandise
+ * dangereuse. Ces rubriques s'impriment « — », jamais `0` ni `NON` : un document
+ * qui ressemble à un document officiel ne doit pas affirmer plus que ce qui est
+ * connu. Les rubriques restent visibles, à remplir à la main.
  *
  * ## Ce module est pur
  *
- * Il ne lit ni le stockage, ni le DOM, ni le réseau : il reçoit un `payload`
- * déjà constitué et rend un document jsPDF. C'est ce qui permet de le rendre
- * sous Node dans `tests/dut-pdf.test.mjs` sans navigateur.
- *
- * ## Écarts délibérés par rapport au POC DUT
- *
- * 1. **jsPDF 4.2.1**, pas 2.5.1. La version vendorisée côté POC DUT cumule 15
- *    avis de sécurité, dont trois critiques (CVE-2026-31938 injection HTML,
- *    CVE-2025-68428 traversée de chemin, CVE-2026-25940 AcroForm). Aucun de ces
- *    vecteurs n'est atteignable ici — pas de `html()`, pas d'`addJS`, pas
- *    d'AcroForm, images servies depuis le dépôt — mais importer une dépendance
- *    de 2022 dans cet état serait indéfendable en revue.
- * 2. **Donnée absente = case vide, jamais zéro.** B2F ne porte pas les colis, le
- *    volume, la valeur, la facturation ni la mention « marchandise dangereuse ».
- *    Le gabarit d'origine formate `null` en `0` et une marchandise non déclarée
- *    en `NON` : ici, `nombre()` et `triEtat()` rendent `-`. Un document officiel
- *    qui annonce « 0 FCFA à percevoir » ou « Dangereuse : NON » sur une donnée
- *    jamais saisie affirme davantage que ce qui est connu.
- * 3. **Deux états au lieu de six.** B2F n'a pas le cycle
- *    VALIDE/SUSPENDU/RETIRÉ : une fiche est un aperçu ou une fiche générée. Les
- *    deux portent le filigrane `SANS VALEUR`, comme les épreuves du POC DUT.
- * 4. **L'exemplaire reste lisible en en-tête.** Le gabarit d'origine remplace le
- *    nom de l'exemplaire par `NON OFFICIEL` sur toute épreuve ; comme tout est
- *    épreuve ici, l'information disparaîtrait. On imprime les deux.
- * 5. **La référence locale s'affiche.** Le gabarit n'imprime le numéro que pour
- *    un DUT attribué, donc jamais pour B2F. La référence `DUT-…` du POC est
- *    imprimée telle quelle, sous un filigrane qui dit ce qu'elle vaut.
- * 6. **Aucun QR.** B2F n'attribue pas de jeton de vérification : l'encart
- *    « AUCUN QR » prévu par le gabarit est conservé, aucun QR n'est fabriqué.
- * 7. **Mentions finales.** La phrase du POC DUT sur l'horodatage des contrôles
- *    par QR est retirée : B2F n'a pas ce registre, l'écrire serait faux.
+ * Ni stockage, ni DOM, ni réseau : il reçoit une charge déjà constituée et rend
+ * un document jsPDF. C'est ce qui permet de le rendre sous Node dans
+ * `tests/dut-pdf.test.mjs`, sans navigateur.
  *
  * @module services/dut-pdf-gabarit
  */
 
-/** Exemplaires prévus par le formulaire officiel. */
+/** Exemplaires nommés — marque n° 8 du dispositif anti-falsification. */
 export const COPIES = Object.freeze({
   TRANSPORTEUR: 'Exemplaire transporteur',
   EXPEDITEUR: 'Exemplaire expéditeur',
@@ -52,33 +51,39 @@ export const COPIES = Object.freeze({
   OIC: 'Souche OIC',
 });
 
-/** États portés par une fiche B2F. Écart n° 3. */
+/** États portés par une fiche B2F. */
 export const ETAT_FICHE = Object.freeze({ APERCU: 'apercu', GENERE: 'genere' });
 
 /**
- * Habillage d'un état : libellé, couleur, filigrane, avertissement.
+ * Habillage d'un état, au sens de la planche « Le document dit son état ».
+ * Les deux états de B2F relèvent de l'épreuve de travail.
  * @param {{etat?: string}} fiche
  */
 export function etatImpression(fiche) {
+  const commun = {
+    officiel: false,
+    bandeau: 'Office Ivoirien des Chargeurs · Épreuve de travail',
+    mention: 'NON OFFICIEL',
+    filigrane: 'SANS VALEUR',
+    qr: 'Aucun QR',
+  };
   if (fiche.etat === ETAT_FICHE.GENERE) {
     return {
+      ...commun,
       label: 'DÉMONSTRATION',
-      color: [97, 105, 121],
-      watermark: 'SANS VALEUR',
-      qr: 'Aucun QR',
-      warning:
-        "Fiche de démonstration du POC Bourse de fret. Aucune valeur administrative : " +
-        "elle n'est ni attribuée, ni transmise au système officiel DUT.",
+      couleur: [90, 100, 118],
+      avertissement:
+        'Fiche produite par la démonstration du POC Bourse de fret. Le numéro n’est ' +
+        'pas attribué par l’Office et rien n’est transmis au système officiel DUT.',
     };
   }
   return {
+    ...commun,
     label: 'APERÇU',
-    color: [97, 105, 121],
-    watermark: 'SANS VALEUR',
-    qr: 'Aucun QR',
-    warning:
-      "Aperçu avant génération. Les informations ne sont pas encore enregistrées " +
-      'et ce tirage ne constitue aucun document.',
+    couleur: [90, 100, 118],
+    avertissement:
+      'Aperçu avant génération. Les informations ne sont pas encore enregistrées : ' +
+      'ce tirage ne constitue aucun document.',
   };
 }
 
@@ -88,7 +93,7 @@ export function etatImpression(fiche) {
 
 /**
  * Somme une colonne de marchandises. Rend `null` si **aucune** ligne ne porte la
- * donnée : additionner des cases vides donnerait un total inventé (écart n° 2).
+ * donnée : additionner des cases vides donnerait un total inventé.
  * @param {Array<Record<string, unknown>>} lignes
  * @param {string} champ
  * @returns {number|null}
@@ -109,12 +114,12 @@ export function totauxMarchandises(marchandises) {
     quantite: somme(marchandises, 'quantite'),
     poidsTonnes: somme(marchandises, 'poidsTonnes'),
     volumeM3: somme(marchandises, 'volumeM3'),
+    valeur: somme(marchandises, 'valeur'),
   };
 }
 
 /**
- * Totaux des sections 5 et 6. Chaque partie porte ses postes, sa TVA et son
- * timbre ; un poste absent ne vaut pas zéro.
+ * Totaux des sections 5 et 6. Un poste absent ne vaut pas zéro.
  * @param {{expediteur?: Record<string, unknown>, destinataire?: Record<string, unknown>}} [facturation]
  */
 export function totauxFacturation(facturation = {}) {
@@ -148,16 +153,23 @@ export function totauxFacturation(facturation = {}) {
 }
 
 /* ------------------------------------------------------------------ *
- * Rendu — coordonnées millimétriques du formulaire officiel
+ * Rendu
  * ------------------------------------------------------------------ */
 
-/** Encre, gris de libellé, filets, fonds. Valeurs du POC DUT. */
-const N = [12, 45, 74];
-const G = [90, 99, 115];
-const BORDER = [191, 202, 214];
-const LIGHT = [241, 245, 249];
+/** Encre, gris de libellé, filets, fonds — relevés sur les planches. */
+const ENCRE = [19, 47, 85];
+const GRIS = [108, 119, 135];
+const FILET = [214, 221, 230];
+const FOND = [245, 248, 251];
+const BLANC = [255, 255, 255];
 
-/** Helvetica intégré à jsPDF n'a pas les espaces fines ni les tirets longs. */
+/** Colonne de gauche, colonne de droite, et les trois colonnes de champs. */
+const G1 = 11;
+const G2 = 199;
+const COL = [11, 77, 141];
+const LARGEUR = G2 - G1;
+
+/** Helvetica intégré n'a ni espace fine, ni tiret long, ni flèche. */
 const texte = (valeur) =>
   String(valeur ?? '')
     .replace(/[  ]/g, ' ')
@@ -165,28 +177,34 @@ const texte = (valeur) =>
     .replace(/[’]/g, "'")
     .replace(/→/g, '>');
 
-/** Écart n° 2 : une donnée absente s'imprime `-`, jamais `0`. */
+/** Une donnée absente s'imprime `-`, jamais `0`. */
 const nombre = (valeur) =>
   valeur == null || valeur === '' || !Number.isFinite(Number(valeur))
     ? '-'
     : texte(new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(Number(valeur)));
 
-/** Écart n° 2 : un booléen non renseigné n'est pas `NON`. */
+/** Un booléen non renseigné n'est pas `NON`. */
 const triEtat = (valeur) => (valeur == null ? '-' : valeur ? 'OUI' : 'NON');
+
+/** Valeur vide : le tiret cadratin des planches, qui montre que la case existe. */
+const ou = (valeur) => (valeur == null || valeur === '' ? '-' : texte(valeur));
 
 const date = (valeur) => (valeur ? new Date(valeur).toLocaleDateString('fr-FR') : '-');
 
+/** Les planches écrivent les heures « 06 h 30 ». */
 const heure = (valeur) =>
   valeur
-    ? new Date(valeur).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(valeur)
+        .toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        .replace(':', ' h ')
     : '';
 
 /**
- * Rend le DUT recto-verso.
+ * Rend le DUT recto-verso au gabarit enrichi.
  *
  * @param {Function} jsPDF Constructeur jsPDF (global UMD en navigateur, `require` en test).
  * @param {Object} payload Charge canonique produite par `dut-pdf.service.js`.
- * @param {string} empreinte SHA-256 hexadécimal du payload — imprimé en pied de page.
+ * @param {string} empreinte SHA-256 hexadécimal de la charge — imprimé en pied de page.
  * @param {{logo?: string, emblem?: string, qr?: string|null}} [images] Data-URL.
  * @returns {Object} Document jsPDF, à `save()` ou à sérialiser.
  */
@@ -194,401 +212,480 @@ export function construireDutPdf(jsPDF, payload, empreinte, { logo, emblem, qr }
   const d = payload.document;
   const g = d.general;
   const a = d.annexes || {};
-  const state = etatImpression(d);
+  const etat = etatImpression(d);
+  const numero = d.dutNumber || 'NON ATTRIBUÉE';
   const doc = new jsPDF({ unit: 'mm', format: 'a4', compress: true });
-  /** Valeurs trop longues pour leur case : reportées en annexe, jamais tronquées en silence. */
+  /** Valeurs trop longues pour leur case : reportées en annexe, jamais tronquées. */
   const extras = [];
 
-  const put = (valeur, x, y, size = 9, bold = false, color = N, options = {}) => {
-    doc.setFont('helvetica', bold ? 'bold' : 'normal');
-    doc.setFontSize(size);
-    doc.setTextColor(...color);
-    doc.text(Array.isArray(valeur) ? valeur.map(texte) : texte(valeur), x, y, options);
-  };
-  const rect = (x, y, w, h, fill = LIGHT) => {
-    doc.setFillColor(...fill);
-    doc.setDrawColor(...BORDER);
-    doc.setLineWidth(0.2);
-    doc.rect(x, y, w, h, 'FD');
-  };
-  const lignes = (valeur, largeur, size = 8) => {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(size);
-    return doc.splitTextToSize(texte(valeur || '-'), largeur);
-  };
-  function bloc(label, valeur, x, y, w, max = 2, size = 8) {
-    put(label.toUpperCase(), x, y, 6.5, true, G);
-    const enroule = lignes(valeur, w, size);
-    if (enroule.length > max) extras.push({ label, valeur: texte(valeur) });
-    put(
-      enroule.length > max
-        ? [...enroule.slice(0, max - 1), `${enroule[max - 1]} [...]`]
-        : enroule,
+  /* ---------------------------- primitives ---------------------------- */
+
+  /**
+   * Pose du texte. `espace` est l'interlettrage des petites capitales, qui fait
+   * l'essentiel de la tenue typographique des planches.
+   */
+  function put(valeur, x, y, options = {}) {
+    const {
+      taille = 9,
+      gras = false,
+      police = 'helvetica',
+      italique = false,
+      couleur = ENCRE,
+      espace = 0,
+      interligne = 1.2,
+      align,
+      angle,
+    } = options;
+    const style = gras && italique ? 'bolditalic' : gras ? 'bold' : italique ? 'italic' : 'normal';
+    doc.setFont(police, style);
+    doc.setFontSize(taille);
+    doc.setTextColor(...couleur);
+    doc.setCharSpace(espace);
+    doc.text(
+      Array.isArray(valeur) ? valeur.map(texte) : texte(valeur),
       x,
-      y + 4,
-      size,
-      false,
-      N,
-      { lineHeightFactor: 1.2 },
+      y,
+      { lineHeightFactor: interligne, ...(align ? { align } : {}), ...(angle ? { angle } : {}) },
     );
+    doc.setCharSpace(0);
   }
-  function section(titre, y) {
-    doc.setFillColor(...N);
-    doc.rect(11, y - 2, 1.6, 1.6, 'F');
-    put(titre, 15, y, 8, true);
-    doc.setDrawColor(...BORDER);
-    doc.line(11, y + 2, 199, y + 2);
+
+  /**
+   * Largeur réelle d'un texte, interlettrage compris.
+   *
+   * `getTextWidth()` mesure la police seule : l'interlettrage posé par
+   * `setCharSpace()` n'y entre pas, et l'option `align:'right'` de jsPDF
+   * l'ignore de la même façon. Sans cette correction les pastilles se
+   * chevauchent et les filets de section barrent leur propre titre.
+   */
+  function largeur(valeur, { taille = 9, gras = false, police = 'helvetica', espace = 0 } = {}) {
+    const brut = texte(valeur);
+    doc.setFont(police, gras ? 'bold' : 'normal');
+    doc.setFontSize(taille);
+    return doc.getTextWidth(brut) + espace * Math.max(0, brut.length - 1);
   }
-  function entete(large = false) {
-    if (emblem) doc.addImage(emblem, 'PNG', 11, 7, 16, 15);
-    put("RÉPUBLIQUE DE CÔTE D'IVOIRE", 31, 13, 9, true);
-    put('Union - Discipline - Travail', 31, 18, 7, false, G);
-    if (logo) doc.addImage(logo, 'JPEG', 174, 4, 26, 22);
-    rect(0, 26, 210, large ? 18 : 13, N);
-    put('Office Ivoirien des Chargeurs', 11, 33, large ? 12 : 10, true, [255, 255, 255]);
-    if (large) put('DOCUMENT UNIQUE DE TRANSPORT', 11, 39, 9, true, [255, 255, 255]);
-    // Écart n° 4 : le POC DUT masque l'exemplaire sur une épreuve ; tout est
-    // épreuve ici, donc les deux mentions cohabitent.
-    put(
-      `NON OFFICIEL · ${COPIES[payload.copy]}`,
-      198,
-      32,
-      7,
-      true,
-      [255, 255, 255],
-      { align: 'right' },
-    );
-    put(
-      large ? 'Décret n° 2015-270 du 22 avril 2015' : 'MODÈLE RÉVISÉ - POC LOCAL',
-      198,
-      large ? 39 : 37,
-      6,
-      false,
-      [210, 226, 244],
-      { align: 'right' },
-    );
-    const yy = large ? 44 : 39;
-    doc.setDrawColor(...state.color);
-    doc.setLineWidth(0.25);
-    for (let x = 0; x < 210; x += 2) doc.line(x, yy, x + 1.2, yy + 1.3);
-    // Bande ondulée : décor repris du gabarit, aucune garantie d'authenticité.
-    doc.setDrawColor(80, 133, 181);
-    doc.setLineWidth(0.1);
-    for (let x = 0; x < 209; x += 0.8) {
-      doc.line(x, yy + 0.7 + Math.sin(x) * 0.35, x + 0.8, yy + 0.7 + Math.sin(x + 0.8) * 0.35);
-    }
+
+  /** Texte aligné à droite, interlettrage compris — jsPDF ne sait pas le faire. */
+  const putDroite = (valeur, xDroite, y, options = {}) =>
+    put(valeur, xDroite - largeur(valeur, options), y, options);
+
+  const rect = (x, y, w, h, fond = null, bord = FILET, epaisseur = 0.2) => {
+    if (fond) doc.setFillColor(...fond);
+    doc.setDrawColor(...bord);
+    doc.setLineWidth(epaisseur);
+    doc.rect(x, y, w, h, fond ? (bord ? 'FD' : 'F') : 'D');
+  };
+
+  const filet = (x1, y, x2, couleur = FILET, epaisseur = 0.2) => {
+    doc.setDrawColor(...couleur);
+    doc.setLineWidth(epaisseur);
+    doc.line(x1, y, x2, y);
+  };
+
+  const decouper = (valeur, largeur, taille = 8.5, police = 'helvetica', gras = false) => {
+    doc.setFont(police, gras ? 'bold' : 'normal');
+    doc.setFontSize(taille);
+    return doc.splitTextToSize(texte(valeur ?? ''), largeur);
+  };
+
+  /**
+   * Pastille à coins arrondis. `pleine` la remplit, sinon elle n'est que cernée —
+   * les deux traitements figurent sur la planche d'état.
+   */
+  function pastille(libelle, x, y, options = {}) {
+    const { pleine = null, bord = FILET, encre = ENCRE, taille = 6.4, espace = 0.3, h = 5 } = options;
+    const w = largeur(libelle, { taille, gras: true, espace }) + 6;
+    if (pleine) doc.setFillColor(...pleine);
+    doc.setDrawColor(...bord);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(x, y, w, h, 1.1, 1.1, pleine ? 'FD' : 'D');
+    put(libelle, x + 3, y + h / 2 + 1.1, { taille, gras: true, couleur: encre, espace });
+    return w;
   }
-  function statut(y, compact = false) {
-    if (state.watermark) {
-      put(state.watermark, 112, y + (compact ? 11 : 16), compact ? 18 : 23, true, [229, 229, 232], {
-        align: 'center',
-        angle: 12,
+
+  /** Libellé en petites capitales grises, puis valeur — la maille des planches. */
+  function champ(libelle, valeur, x, y, w, options = {}) {
+    const { taille = 9, gras = true, police = 'helvetica', lignes = 1, couleur = ENCRE } = options;
+    put(libelle.toUpperCase(), x, y, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+    const enroule = decouper(ou(valeur), w, taille, police, gras);
+    if (enroule.length > lignes) extras.push({ label: libelle, valeur: texte(valeur) });
+    put(enroule.slice(0, lignes), x, y + 4.4, { taille, gras, police, couleur, interligne: 1.25 });
+    return y + 4.4 + enroule.slice(0, lignes).length * (taille * 0.42);
+  }
+
+  /** Titre de section : carré plein, capitales espacées, filet jusqu'à la marge. */
+  function section(numeroSection, titre, y) {
+    doc.setFillColor(...ENCRE);
+    doc.rect(G1, y - 2.6, 2.4, 2.4, 'F');
+    const libelle = `${numeroSection} · ${titre}`;
+    put(libelle, G1 + 4.6, y, { taille: 7.4, gras: true, espace: 0.55 });
+    filet(G1 + 7.6 + largeur(libelle, { taille: 7.4, gras: true, espace: 0.55 }), y - 1, G2);
+  }
+
+  /** Bande guillochée sous le bandeau — marque n° 1, décorative et assumée. */
+  function guilloche(y) {
+    doc.setDrawColor(...etat.couleur);
+    doc.setLineWidth(0.9);
+    for (let x = 0; x < 210; x += 3.2) doc.line(x, y + 0.5, x + 1.7, y + 0.5);
+    doc.setDrawColor(130, 148, 172);
+    doc.setLineWidth(0.35);
+    for (let x = 1.6; x < 210; x += 3.2) doc.line(x, y + 1.3, x + 1, y + 1.3);
+  }
+
+  /** En-tête institutionnel. Pleine hauteur au recto, réduit au verso. */
+  function entete(complet) {
+    if (complet) {
+      if (emblem) doc.addImage(emblem, 'PNG', G1, 7, 12.5, 11.1);
+      put("RÉPUBLIQUE DE CÔTE D'IVOIRE", 27, 12.4, { taille: 9.5, gras: true, espace: 0.55 });
+      put('Union · Discipline · Travail', 27, 16.6, { taille: 7.2, italique: true, couleur: GRIS });
+      if (logo) doc.addImage(logo, 'JPEG', 177, 4.5, 22, 22);
+      doc.setFillColor(...etat.couleur);
+      doc.rect(0, 26, 210, 13.8, 'F');
+      put('Office Ivoirien des Chargeurs', G1, 31.6, { taille: 11.5, gras: true, police: 'times', couleur: BLANC });
+      put('DOCUMENT UNIQUE DE TRANSPORT', G1, 36.8, { taille: 7.6, gras: true, espace: 0.7, couleur: BLANC });
+      // Marque n° 8 : l'exemplaire est nommé, et l'épreuve le dit.
+      const mention = COPIES[payload.copy].toUpperCase();
+      const style = { taille: 6.6, gras: true, espace: 0.5 };
+      const largeurPastille = largeur(mention, style) + 7;
+      doc.setDrawColor(...BLANC);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(G2 - largeurPastille, 28.4, largeurPastille, 5.4, 1.2, 1.2, 'D');
+      put(mention, G2 - largeurPastille + 3.5, 32.1, { ...style, couleur: BLANC });
+      putDroite(`${etat.mention} · tirage local, hors application du décret`, G2, 37.6, {
+        taille: 5.8, couleur: [214, 222, 234],
       });
+      guilloche(39.8);
+      return;
     }
-    // Écart n° 5 : la référence locale s'imprime, sous le filigrane qui la qualifie.
-    put(d.dutNumber || 'NON ATTRIBUÉE', 11, y, compact ? 12 : 19, true);
-    rect(11, y + 3, 28, 6, state.color);
-    put(state.label, 25, y + 7.2, 7, true, [255, 255, 255], { align: 'center' });
-    put(
-      `Impression n° ${payload.rank}  |  Émis le ${date(g.dateEmission)}`,
-      42,
-      y + 7,
-      7,
-      false,
-      G,
-    );
-    const etatTexte = `${state.label} : ${date(g.dateEmission)}${heure(g.dateEmission) ? ` ${heure(g.dateEmission)}` : ''}`;
-    put(lignes(etatTexte, 150, 7).slice(0, 2), 11, y + 15, 7, false, G);
-    if (!compact) {
-      bloc('Antenne émettrice', d.antennaName, 11, y + 23, 47, 1);
-      bloc('Partenaire agréé', d.partnerName, 64, y + 23, 53, 1);
-      bloc("Plage d'attribution", payload.operation, 123, y + 23, 37, 1);
-      // Écart n° 6 : aucun QR n'est fabriqué ; l'encart du gabarit reste visible.
-      if (qr) {
-        rect(166, y - 9, 33, 33, [255, 255, 255]);
-        doc.addImage(qr, 'PNG', 168, y - 7, 29, 29);
-        put(state.qr, 182.5, y + 28, 6.5, true, state.color, { align: 'center' });
-      } else {
-        rect(166, y - 9, 33, 33);
-        put('AUCUN QR', 182.5, y + 9, 8, true, G, { align: 'center' });
-      }
-    }
-    const avertissement = lignes(state.warning, 188, 6.5);
-    if (avertissement.length > 2) extras.push({ label: 'État', valeur: state.warning });
-    put(avertissement.slice(0, 2), 11, y + (compact ? 22 : 37), 6.5, true, state.color, {
-      lineHeightFactor: 1.1,
+    if (emblem) doc.addImage(emblem, 'PNG', G1, 6, 9, 8);
+    put("RÉPUBLIQUE DE CÔTE D'IVOIRE", 23, 11.4, { taille: 7.6, gras: true, espace: 0.5 });
+    doc.setFillColor(...etat.couleur);
+    doc.rect(0, 17.5, 210, 10, 'F');
+    put(etat.bandeau, G1, 23.9, { taille: 9, gras: true, police: 'times', couleur: BLANC });
+    putDroite(numero, G2, 23.9, { taille: 9.5, gras: true, police: 'courier', couleur: BLANC });
+    guilloche(27.5);
+  }
+
+  /** Filigrane diagonal — le document dit son état même photocopié. */
+  function filigrane(centre, y, taille) {
+    // `align:'center'` souffre du même défaut que l'alignement à droite : il ne
+    // compte pas l'interlettrage, et le filigrane sortait de la page.
+    const style = { taille, gras: true, couleur: [206, 211, 219], espace: 2 };
+    // Posé en dernier pour passer par-dessus les cadres à fond blanc, donc en
+    // transparence : un filigrane opaque effacerait la ligne qu'il croise.
+    doc.setGState(new doc.GState({ opacity: 0.4 }));
+    put(etat.filigrane, centre - largeur(etat.filigrane, style) / 2, y, { ...style, angle: 14 });
+    doc.setGState(new doc.GState({ opacity: 1 }));
+  }
+
+  /* ------------------------------ recto ------------------------------ */
+
+  entete(true);
+
+  put('N° DU DOCUMENT UNIQUE DE TRANSPORT', G1, 48.6, {
+    taille: 5.8, gras: true, couleur: GRIS, espace: 0.5,
+  });
+  // Marque n° 2 : le numéro n'existe qu'attribué. Ici il ne l'est pas, et sa
+  // teinte grise le dit avant même qu'on lise la pastille.
+  put(numero, G1, 57.6, { taille: 19, gras: true, police: 'courier', couleur: [120, 131, 148], espace: 0.3 });
+
+  let xPastille = G1;
+  xPastille += pastille(etat.label, xPastille, 61.6, { pleine: etat.couleur, bord: etat.couleur, encre: BLANC }) + 2.5;
+  // Marque n° 6 : le rang d'impression est porté par le document.
+  xPastille += pastille(`Impression n° ${payload.rank}`, xPastille, 61.6, { couleur: ENCRE }) + 2.5;
+  pastille(
+    d.general.dateEmission ? `Émis le ${date(g.dateEmission)}` : 'Non émis',
+    xPastille,
+    61.6,
+    {},
+  );
+
+  champ('Antenne émettrice', d.antennaName, COL[0], 72.4, 50, { taille: 8.5 });
+  champ('Partenaire agréé', d.partnerName, 65, 72.4, 50, { taille: 8.5 });
+  champ("Plage d'attribution", payload.operation, 119, 72.4, 46, { taille: 8.5, police: 'courier' });
+
+  // Marque n° 4 : aucun QR n'est fabriqué. L'encadré pointillé le signale au
+  // lieu de laisser croire qu'il aurait été oublié à l'impression.
+  if (qr) {
+    rect(170, 47.6, 29, 29, BLANC);
+    doc.addImage(qr, 'PNG', 171.5, 49.1, 26, 26);
+  } else {
+    doc.setLineDashPattern([1, 1], 0);
+    rect(170, 47.6, 29, 29, FOND, [168, 178, 192]);
+    doc.setLineDashPattern([], 0);
+    put(etat.qr, 184.5, 63.4, { taille: 8, gras: true, couleur: GRIS, align: 'center' });
+  }
+  put('VÉRIFICATION TERRAIN', 184.5, 80.4, { taille: 5.4, gras: true, couleur: GRIS, espace: 0.4, align: 'center' });
+  put('aucun jeton émis', 184.5, 83.6, { taille: 6, police: 'courier', couleur: GRIS, align: 'center' });
+
+  const alerte = decouper(etat.avertissement, 150, 6.4);
+  put(alerte.slice(0, 2), G1, 80.6, { taille: 6.4, gras: true, couleur: etat.couleur, interligne: 1.25 });
+
+  filet(G1, 88, G2);
+
+  section('1', 'TRANSPORTEUR, VÉHICULE ET CONDUCTEUR', 95);
+  champ('Transporteur', g.transporterName, COL[0], 100.4, 60);
+  champ('Immatriculation', g.immatriculation, COL[1], 100.4, 56, { police: 'courier' });
+  champ('Conducteur', `${g.driverNom || ''} ${g.driverPrenoms || ''}`.trim(), COL[2], 100.4, 56);
+  champ('Registre de commerce', payload.transporter.registre, COL[0], 110.6, 60, { taille: 8, gras: false, police: 'courier' });
+  champ(
+    'Type · capacité',
+    payload.vehicle.type || payload.vehicle.capaciteTonnes != null
+      ? `${payload.vehicle.type || '-'} · ${payload.vehicle.capaciteTonnes ?? '-'} t`
+      : '',
+    COL[1], 110.6, 56, { taille: 8, gras: false },
+  );
+  champ(
+    "Permis · pièce d'identité",
+    g.driverPermis || g.driverPiece ? `${g.driverPermis || '-'} · ${g.driverPiece || '-'}` : '',
+    COL[2], 110.6, 56, { taille: 7.6, gras: false, police: 'courier' },
+  );
+
+  section('2', 'EXPÉDITEUR ET DESTINATAIRE', 124);
+  for (const [partie, x, libelle] of [
+    [d.expediteur, G1, 'Expéditeur'],
+    [d.destinataire, 107, 'Destinataire'],
+  ]) {
+    put(libelle.toUpperCase(), x, 129.4, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+    put(decouper(ou(partie.raisonSociale).toUpperCase(), 88, 10, 'helvetica', true).slice(0, 1), x, 134.4, {
+      taille: 10, gras: true,
+    });
+    put(`${ou(partie.adresse)} · ${ou(partie.contact)}`, x, 139.4, { taille: 8 });
+    put(`RC ${ou(partie.registre)} · Réf. ${ou(partie.reference)}`, x, 144, {
+      taille: 7.4, police: 'courier', couleur: GRIS,
     });
   }
 
-  entete(true);
-  statut(57);
-
-  section('1 - TRANSPORTEUR, VÉHICULE ET CONDUCTEUR', 106);
-  bloc('Transporteur', g.transporterName, 11, 112, 61, 2, 9);
-  bloc('Immatriculation', g.immatriculation, 77, 112, 56, 1, 9);
-  bloc('Conducteur', `${g.driverNom || ''} ${g.driverPrenoms || ''}`.trim(), 141, 112, 58, 2, 9);
-  bloc('Registre de commerce', payload.transporter.registre, 11, 128, 60, 1);
-  bloc(
-    'Type / capacité',
-    `${payload.vehicle.type || '-'} / ${payload.vehicle.capaciteTonnes ?? '-'} t`,
-    77,
-    128,
-    58,
-    1,
-  );
-  bloc(
-    "Permis / pièce d'identité",
-    `${g.driverPermis || '-'} / ${g.driverPiece || '-'}`,
-    141,
-    128,
-    58,
-    2,
-    7,
-  );
-
-  section('2 - EXPÉDITEUR ET DESTINATAIRE', 144);
-  for (const [partie, x, label] of [
-    [d.expediteur, 11, 'Expéditeur'],
-    [d.destinataire, 109, 'Destinataire'],
-  ]) {
-    bloc(
-      label,
-      `${partie.raisonSociale || '-'}\n${partie.adresse || '-'} / ${partie.contact || '-'}\nRC ${partie.registre || '-'} / Réf. ${partie.reference || '-'}`,
-      x,
-      150,
-      89,
-      4,
-      8,
-    );
-  }
-
-  section('3 - TRAJET', 175);
-  rect(11, 179, 188, 24);
+  section('3', 'TRAJET', 152);
   const t = d.trajet;
-  bloc(
-    'Chargement',
-    `${t.chargement.ville || '-'} / ${t.chargement.lieu || '-'}\n${t.chargement.adresse || ''}\n${date(t.dateDepart)} / ${t.heureDepart || '-'}`,
-    15,
-    184,
-    65,
-    3,
-    7.5,
-  );
-  bloc(
-    'Déchargement',
-    `${t.dechargement.ville || '-'} / ${t.dechargement.lieu || '-'}\n${t.dechargement.adresse || ''}\n${date(t.dateArrivee)} / ${t.heureArrivee || '-'}`,
-    132,
-    184,
-    63,
-    3,
-    7.5,
-  );
-  put(texte(g.transportType || '-').replaceAll('_', ' '), 105, 188, 6.5, true, N, {
-    align: 'center',
+  rect(G1, 156, LARGEUR, 24, BLANC);
+  put('CHARGEMENT', G1 + 4, 161.4, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+  put(ou(t.chargement.ville).toUpperCase(), G1 + 4, 167.4, { taille: 12, gras: true });
+  put(`${ou(t.chargement.lieu)} · ${ou(t.chargement.adresse)}`, G1 + 4, 172, { taille: 7.4, couleur: GRIS });
+  put(`${date(t.dateDepart)} · ${t.heureDepart || '-'}`, G1 + 4, 176.4, { taille: 7.8, police: 'courier' });
+  putDroite('DÉCHARGEMENT', G2 - 4, 161.4, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+  put(ou(t.dechargement.ville).toUpperCase(), G2 - 4, 167.4, { taille: 12, gras: true, align: 'right' });
+  put(`${ou(t.dechargement.lieu)} · ${ou(t.dechargement.adresse)}`, G2 - 4, 172, {
+    taille: 7.4, couleur: GRIS, align: 'right',
   });
-  put(texte(g.compte || '-').replaceAll('_', ' '), 105, 194, 6.5, true, N, { align: 'center' });
+  put(`${date(t.dateArrivee)} · ${t.heureArrivee || '-'}`, G2 - 4, 176.4, {
+    taille: 7.8, police: 'courier', align: 'right',
+  });
+  // Flèche de liaison entre les deux villes.
+  doc.setDrawColor(...ENCRE);
+  doc.setLineWidth(0.4);
+  doc.line(84, 165.6, 124, 165.6);
+  doc.setFillColor(...ENCRE);
+  doc.triangle(124, 165.6, 121.4, 164.4, 121.4, 166.8, 'F');
+  let xChip = 84;
+  xChip += pastille(ou(g.transportType).replaceAll('_', ' '), xChip, 169.4, { taille: 6, espace: 0.4 }) + 2.5;
+  pastille(ou(g.compte).replaceAll('_', ' '), xChip, 169.4, { taille: 6, espace: 0.4 });
 
-  section('4 - MARCHANDISES TRANSPORTÉES', 210);
-  const colonnes = [11, 73, 112, 132, 152, 174];
-  const largeurs = [60, 37, 18, 18, 20, 25];
-  const enteteMarchandises = (y) => {
-    rect(11, y, 188, 7, N);
-    ['DÉSIGNATION / NATURE', 'EMBALLAGE', 'COLIS', 'POIDS (T)', 'VOL. (M³)', 'VALEUR'].forEach(
-      (v, i) => put(v, colonnes[i] + 2, y + 4.5, 6, true, [255, 255, 255]),
-    );
-  };
-  const valeurMarchandise = (m) =>
-    m.valeur == null || m.valeur === '' ? '-' : `${nombre(m.valeur)} ${m.devise || 'FCFA'}`;
-  const hauteurLigne = (m) =>
-    Math.max(
-      lignes(m.designation ? `${m.designation} / ${m.nature}` : m.nature, 56, 7).length,
-      lignes(m.emballage, 33, 7).length,
-      lignes(valeurMarchandise(m), 21, 7).length,
-    ) * 3 + 3;
+  section('4', 'MARCHANDISES TRANSPORTÉES', 187);
+  const COLONNES = [
+    { libelle: 'DÉSIGNATION', x: G1 + 2, largeur: 50 },
+    { libelle: 'NATURE', x: 65, largeur: 34 },
+    { libelle: 'COLIS', x: 123, largeur: 16, droite: true },
+    { libelle: 'POIDS (T)', x: 145, largeur: 18, droite: true },
+    { libelle: 'VOLUME (M³)', x: 172, largeur: 20, droite: true },
+    { libelle: 'VALEUR (FCFA)', x: G2 - 2, largeur: 26, droite: true },
+  ];
+  function enteteTableau(y) {
+    doc.setFillColor(...ENCRE);
+    doc.rect(G1, y, LARGEUR, 6.6, 'F');
+    for (const c of COLONNES) {
+      const style = { taille: 5.8, gras: true, espace: 0.4, couleur: BLANC };
+      if (c.droite) putDroite(c.libelle, c.x, y + 4.4, style);
+      else put(c.libelle, c.x, y + 4.4, style);
+    }
+    return y + 6.6;
+  }
   function ligneMarchandise(m, y) {
     const valeurs = [
-      m.designation ? `${m.designation} / ${m.nature}` : m.nature,
-      m.emballage,
+      ou(m.designation || m.nature),
+      ou(m.designation ? m.nature : ''),
       nombre(m.quantite),
       nombre(m.poidsTonnes),
       nombre(m.volumeM3),
-      valeurMarchandise(m),
+      nombre(m.valeur),
     ];
-    const rangees = valeurs.map((v, i) => lignes(v, largeurs[i] - 4, 7));
-    const h = Math.max(...rangees.map((r) => r.length)) * 3 + 3;
-    rangees.forEach((r, i) =>
-      put(r, colonnes[i] + 2, y + 4, 7, false, N, { lineHeightFactor: 1.15 }),
+    const blocs = valeurs.map((v, i) => decouper(v, COLONNES[i].largeur - 3, 8));
+    const h = Math.max(...blocs.map((b) => b.length)) * 3.6 + 3.4;
+    blocs.forEach((b, i) =>
+      put(b, COLONNES[i].x, y + 4.6, {
+        taille: 8,
+        police: i >= 2 ? 'courier' : 'helvetica',
+        interligne: 1.2,
+        ...(COLONNES[i].droite ? { align: 'right' } : {}),
+      }),
     );
-    doc.setDrawColor(...BORDER);
-    doc.line(11, y + h, 199, y + h);
+    filet(G1, y + h, G2);
     return h;
   }
-  enteteMarchandises(214);
-  let cy = 221;
+  let yTableau = enteteTableau(190.6);
   const debordement = [];
   for (const m of d.marchandises || []) {
-    if (cy + hauteurLigne(m) > 242 || debordement.length) debordement.push(m);
-    else cy += ligneMarchandise(m, cy);
-  }
-  if (debordement.length) {
-    put(
-      `${debordement.length} ligne(s) supplémentaire(s) : voir annexe marchandises.`,
-      13,
-      cy + 4,
-      6.5,
-      true,
-      G,
+    const blocs = [ou(m.designation || m.nature), ou(m.designation ? m.nature : '')].map((v, i) =>
+      decouper(v, COLONNES[i].largeur - 3, 8),
     );
+    const hauteur = Math.max(...blocs.map((b) => b.length)) * 3.6 + 3.4;
+    if (yTableau + hauteur > 221 || debordement.length) debordement.push(m);
+    else yTableau += ligneMarchandise(m, yTableau);
   }
   const totaux = totauxMarchandises(d.marchandises);
-  const parDevise = {};
-  for (const m of d.marchandises || []) {
-    if (m.valeur == null || m.valeur === '') continue;
-    const devise = m.devise || 'FCFA';
-    parDevise[devise] = (parDevise[devise] || 0) + Number(m.valeur);
+  doc.setFillColor(...FOND);
+  doc.rect(G1, yTableau, LARGEUR, 7, 'F');
+  put('TOTAL', COLONNES[0].x, yTableau + 4.6, { taille: 7, gras: true, espace: 0.4 });
+  [totaux.quantite, totaux.poidsTonnes, totaux.volumeM3, totaux.valeur].forEach((valeur, i) =>
+    put(nombre(valeur), COLONNES[i + 2].x, yTableau + 4.6, {
+      taille: 8, gras: true, police: 'courier', align: 'right',
+    }),
+  );
+  filet(G1, yTableau + 7, G2);
+  let yApresTableau = yTableau + 11.4;
+  if (debordement.length) {
+    put(`${debordement.length} ligne(s) supplémentaire(s) : voir annexe marchandises.`, G1, yApresTableau, {
+      taille: 6.4, gras: true, couleur: GRIS,
+    });
+    yApresTableau += 4.6;
   }
-  const deviseTexte =
-    Object.keys(parDevise).length === 0
-      ? '-'
-      : Object.entries(parDevise)
-          .map(([devise, valeur]) => `${nombre(valeur)} ${devise}`)
-          .join(' / ');
-  put(
-    `TOTAL : ${nombre(totaux.quantite)} colis | ${nombre(totaux.poidsTonnes)} t | ${nombre(totaux.volumeM3)} m³`,
-    11,
-    247,
-    7,
-    true,
-  );
-  const ligneValeur = lignes(`Valeur : ${deviseTexte}`, 188, 6.5);
-  if (ligneValeur.length > 1) extras.push({ label: 'Valeur totale par devise', valeur: deviseTexte });
-  put(ligneValeur[0], 11, 251, 6.5);
-  put(
-    `Dangereuse : ${triEtat(d.dangereuse)}  /  Température dirigée : ${triEtat(d.temperatureControlee)}`,
-    11,
-    254,
-    6.5,
-    true,
-    G,
-  );
+  let xMention = G1;
+  xMention += pastille(`MARCHANDISE DANGEREUSE : ${triEtat(d.dangereuse)}`, xMention, yApresTableau - 3.4, {
+    taille: 6, espace: 0.4,
+  }) + 3;
+  pastille(`TEMPÉRATURE DIRIGÉE : ${triEtat(d.temperatureControlee)}`, xMention, yApresTableau - 3.4, {
+    taille: 6, espace: 0.4,
+  });
 
-  section('5 - CONDITIONS FINANCIÈRES', 260);
+  section('5', 'CONDITIONS FINANCIÈRES', 235);
   const f = totauxFacturation(d.facturation);
-  put(`Expéditeur HT : ${nombre(f.totalExpediteur)} FCFA`, 11, 266, 7);
-  put(`Destinataire HT : ${nombre(f.totalDestinataire)} FCFA`, 11, 271, 7);
-  put(`TVA : ${nombre(f.tva)} / Timbres : ${nombre(f.timbreTotal)} FCFA`, 11, 276, 7);
-  rect(117, 264, 82, 12, N);
-  put('TOTAL À PERCEVOIR', 121, 268, 6.5, true, [255, 255, 255]);
-  put(`${nombre(f.totalAPercevoir)} FCFA`, 195, 273, 10, true, [255, 255, 255], { align: 'right' });
+  put('RÉPARTITION DES FRAIS', G1, 240.4, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+  const repartition = [
+    ["À la charge de l'expéditeur", f.totalExpediteur],
+    ['À la charge du destinataire', f.totalDestinataire],
+    ['Timbres fiscaux', f.timbreTotal],
+  ];
+  repartition.forEach(([libelle, valeur], i) => {
+    const y = 246 + i * 5.4;
+    put(libelle, G1, y, { taille: 8.4 });
+    put(nombre(valeur), 100, y, { taille: 8.4, police: 'courier', align: 'right' });
+  });
+  put('Total hors taxes', 112, 246, { taille: 8.4 });
+  put(nombre(f.totalExpediteur == null && f.totalDestinataire == null ? null : (f.totalExpediteur ?? 0) + (f.totalDestinataire ?? 0)), G2, 246, {
+    taille: 8.4, police: 'courier', align: 'right',
+  });
+  put(`TVA${f.expediteur.tauxTva != null ? ` ${f.expediteur.tauxTva} %` : ''}`, 112, 251.4, { taille: 8.4 });
+  put(nombre(f.tva), G2, 251.4, { taille: 8.4, police: 'courier', align: 'right' });
+  doc.setFillColor(...ENCRE);
+  doc.rect(112, 255.4, G2 - 112, 11, 'F');
+  put('TOTAL À PERCEVOIR', 115, 261.4, { taille: 6.6, gras: true, espace: 0.5, couleur: BLANC });
+  put(nombre(f.totalAPercevoir), G2 - 3, 262.4, {
+    taille: 12, gras: true, police: 'courier', couleur: BLANC, align: 'right',
+  });
+  put('Francs CFA · aucun montant arrêté dans cette démonstration', G2, 269.4, {
+    taille: 6, couleur: GRIS, align: 'right',
+  });
 
-  /* ----------------------------- verso ----------------------------- */
+  /* ------------------------------ verso ------------------------------ */
 
   doc.addPage();
-  entete();
-  statut(50, true);
+  entete(false);
 
-  section('6 - DÉTAIL DES POSTES FACTURÉS', 79);
-  rect(11, 83, 188, 7);
-  put('POSTE', 14, 87.5, 7, true);
-  put('EXPÉDITEUR (FCFA)', 139, 87.5, 7, true, N, { align: 'right' });
-  put('DESTINATAIRE (FCFA)', 196, 87.5, 7, true, N, { align: 'right' });
-  let fy = 95;
-  for (const [label, cle] of [
+  section('6', 'DÉTAIL DES POSTES FACTURÉS', 38);
+  doc.setFillColor(...FOND);
+  doc.rect(G1, 41.4, LARGEUR, 6.6, 'F');
+  put('POSTE', G1 + 3, 45.8, { taille: 5.8, gras: true, espace: 0.4 });
+  putDroite('EXPÉDITEUR (FCFA)', 140, 45.8, { taille: 5.8, gras: true, espace: 0.4 });
+  putDroite('DESTINATAIRE (FCFA)', G2 - 3, 45.8, { taille: 5.8, gras: true, espace: 0.4 });
+  let yPoste = 48;
+  for (const [libelle, cle] of [
     ['Prix du transport', 'prixTransport'],
     ['Frais accessoires', 'accessoires'],
     ['Frais complémentaires', 'complementaires'],
     ['Autres frais', 'autres'],
   ]) {
-    put(label, 14, fy, 8);
-    put(nombre(d.facturation?.expediteur?.[cle]), 139, fy, 8, false, N, { align: 'right' });
-    put(nombre(d.facturation?.destinataire?.[cle]), 196, fy, 8, false, N, { align: 'right' });
-    doc.setDrawColor(...BORDER);
-    doc.line(11, fy + 2, 199, fy + 2);
-    fy += 7;
+    put(libelle, G1 + 3, yPoste + 5, { taille: 8.4 });
+    put(nombre(d.facturation?.expediteur?.[cle]), 140, yPoste + 5, { taille: 8.4, police: 'courier', align: 'right' });
+    put(nombre(d.facturation?.destinataire?.[cle]), G2 - 3, yPoste + 5, {
+      taille: 8.4, police: 'courier', align: 'right',
+    });
+    filet(G1, yPoste + 7.4, G2);
+    yPoste += 7.4;
   }
-  const taux = (v) => (v == null ? '-' : `${v}%`);
-  for (const [label, x1, x2] of [
-    ['Sous-total HT', f.expediteur.ht, f.destinataire.ht],
-    [
-      `TVA (${taux(f.expediteur.tauxTva)} / ${taux(f.destinataire.tauxTva)})`,
-      f.expediteur.tvaMontant,
-      f.destinataire.tvaMontant,
-    ],
-    ['Timbre fiscal', f.expediteur.timbre, f.destinataire.timbre],
-    ['Total', f.expediteur.total, f.destinataire.total],
-  ]) {
-    put(label, 14, fy, 7, true);
-    put(nombre(x1), 139, fy, 7, true, N, { align: 'right' });
-    put(nombre(x2), 196, fy, 7, true, N, { align: 'right' });
-    fy += 6;
-  }
+  doc.setFillColor(...FOND);
+  doc.rect(G1, yPoste, LARGEUR, 7.4, 'F');
+  put('Sous-total', G1 + 3, yPoste + 5, { taille: 8.4, gras: true });
+  put(nombre(f.totalExpediteur), 140, yPoste + 5, { taille: 8.4, gras: true, police: 'courier', align: 'right' });
+  put(nombre(f.totalDestinataire), G2 - 3, yPoste + 5, {
+    taille: 8.4, gras: true, police: 'courier', align: 'right',
+  });
 
-  section('7 - ANNEXES ET INSTRUCTIONS', 150);
-  bloc('Emballages / supports', a.emballages, 11, 156, 88, 2);
-  bloc(
+  section('7', 'ANNEXES ET INSTRUCTIONS', 96);
+  champ('Emballages', a.emballages, G1, 101, 88, { taille: 8.4, gras: false, lignes: 2 });
+  champ(
     'Pièces jointes',
     [...(a.pieces || []).map((p) => p.name), ...payload.files.map((p) => p.name)].join(', '),
-    109,
-    156,
-    89,
-    2,
+    107, 101, 88, { taille: 8.4, gras: false, lignes: 2 },
   );
-  bloc(
-    'Instructions / prestations',
-    [a.instructions, a.accessoires, a.complementaires].filter(Boolean).join('\n'),
-    11,
-    169,
-    188,
-    3,
-    7.5,
+  champ(
+    'Instructions particulières',
+    [a.instructions, a.accessoires, a.complementaires].filter(Boolean).join(' '),
+    G1, 113, LARGEUR, { taille: 8.4, gras: false, lignes: 3 },
   );
 
-  section('8 - RÉSERVES', 188);
-  rect(11, 192, 91, 18, [255, 255, 255]);
-  rect(108, 192, 91, 18, [255, 255, 255]);
-  bloc('À la prise en charge', a.reservePriseEnCharge, 14, 197, 85, 2, 7);
-  bloc('À la livraison', a.reserveLivraison, 111, 197, 85, 2, 7);
-
-  section('9 - VISAS DE CONTRÔLE ROUTIER', 216);
-  for (let i = 0; i < 4; i += 1) {
-    const x = 11 + i * 48;
-    rect(x, 220, 44, 21, [255, 255, 255]);
-    put(`CONTRÔLE ${i + 1}`, x + 2, 224, 6.5, true);
-    put('Date / lieu', x + 2, 229, 6, false, G);
-    put('Agent / matricule', x + 2, 233, 6, false, G);
-    put('Cachet et visa', x + 2, 239, 6, false, G);
+  section('8', 'RÉSERVES', 132);
+  for (const [libelle, valeur, x] of [
+    ['À la prise en charge', a.reservePriseEnCharge, G1],
+    ['À la livraison', a.reserveLivraison, 107],
+  ]) {
+    rect(x, 136, 81, 20, BLANC);
+    put(libelle.toUpperCase(), x + 3, 141, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+    if (valeur) put(decouper(valeur, 75, 7.6).slice(0, 2), x + 3, 146, { taille: 7.6, interligne: 1.3 });
+    else for (let i = 0; i < 2; i += 1) filet(x + 3, 147 + i * 5, x + 78, [226, 232, 240]);
   }
-  // Écart n° 7 : B2F n'a pas de registre de contrôle, la phrase du POC DUT sur
-  // l'horodatage par QR n'est pas reprise.
-  put('Cases à viser à la main : cette démonstration ne tient aucun registre de contrôle.', 11, 245, 6.5, false, G);
 
-  section('10 - SIGNATURES', 249);
-  ['EXPÉDITEUR', 'TRANSPORTEUR / CONDUCTEUR', 'DESTINATAIRE'].forEach((v, i) => {
-    const x = 11 + i * 64;
-    rect(x, 253, 60, 15, [255, 255, 255]);
-    put(v, x + 2, 257, 6.2, true);
-    put('Nom, qualité, date et signature', x + 2, 262, 6, false, G);
-  });
+  section('9', 'VISAS DE CONTRÔLE ROUTIER', 164);
+  for (let i = 0; i < 4; i += 1) {
+    const x = G1 + i * 47.5;
+    rect(x, 168, 44.5, 24, BLANC);
+    put(`CONTRÔLE ${i + 1}`, x + 3, 172.8, { taille: 5.8, gras: true, espace: 0.45 });
+    put('Date · lieu', x + 3, 177.6, { taille: 6.4, couleur: GRIS });
+    put('Agent · matricule', x + 3, 182.2, { taille: 6.4, couleur: GRIS });
+    put('Cachet et visa', x + 3, 189.4, { taille: 6.4, couleur: GRIS });
+  }
   put(
-    lignes(
-      'MENTIONS : Ce document accompagne la marchandise du voyage désigné et doit être présenté au contrôle. ' +
-        "Toute altération doit être signalée. Cette fiche est produite par une démonstration locale : elle n'est " +
-        'pas attribuée par l’Office Ivoirien des Chargeurs et ne peut pas être présentée comme un DUT valide.',
-      188,
-      6,
-    ),
-    11,
-    272,
-    6,
-    false,
-    G,
-    { lineHeightFactor: 1.1 },
+    'Ces cases se visent à la main : cette démonstration ne tient aucun journal de contrôle.',
+    G1, 196.6, { taille: 6.4, couleur: GRIS },
   );
 
-  /* --------------------------- annexes ----------------------------- */
+  section('10', 'SIGNATURES', 205);
+  ['EXPÉDITEUR', 'TRANSPORTEUR / CONDUCTEUR', 'DESTINATAIRE'].forEach((libelle, i) => {
+    const x = G1 + i * 63.5;
+    rect(x, 209, 61, 26, BLANC);
+    put(libelle, x + 3, 213.8, { taille: 5.8, gras: true, espace: 0.45 });
+    put('Nom, qualité, date', x + 3, 218.4, { taille: 6.4, couleur: GRIS });
+    filet(x + 3, 230, x + 58, [226, 232, 240]);
+  });
+
+  rect(G1, 243, LARGEUR, 25, FOND);
+  put('MENTIONS', G1 + 4, 248.4, { taille: 5.8, gras: true, espace: 0.5 });
+  put(
+    decouper(
+      'Ce document accompagne la marchandise pendant toute la durée du transport et doit être ' +
+        'présenté à toute réquisition. Il est strictement personnel au voyage désigné. Toute rature, ' +
+        'surcharge ou reproduction non autorisée le rend nul. Le présent tirage est une épreuve de ' +
+        'travail : il n’a pas été attribué par l’Office Ivoirien des Chargeurs et ne peut en aucun cas ' +
+        'être présenté comme un DUT valide.',
+      LARGEUR - 8,
+      7,
+    ),
+    G1 + 4, 253.4, { taille: 7, interligne: 1.35 },
+  );
+
+  /* ----------------------------- annexes ----------------------------- */
 
   // Les données B2F sans case au formulaire officiel (carte de transport, carte
-  // grise, contacts, référence de la mise en relation) sont reportées en annexe
+  // grise, contacts, référence de mise en relation) sont reportées en annexe
   // plutôt que tues : l'empreinte les couvre, le lecteur doit pouvoir les voir.
   const LIBELLES_COMPLEMENTS = {
     appariementReference: 'Référence de la mise en relation',
@@ -604,91 +701,86 @@ export function construireDutPdf(jsPDF, payload, empreinte, { logo, emblem, qr }
 
   if (debordement.length) {
     doc.addPage();
-    entete();
-    section('ANNEXE - MARCHANDISES (SUITE DU RECTO)', 49);
-    enteteMarchandises(54);
-    let y = 61;
+    entete(false);
+    section('A', 'MARCHANDISES (SUITE DU RECTO)', 38);
+    let y = enteteTableau(41.4);
     for (const m of debordement) {
-      const h = hauteurLigne(m);
-      if (h > 205) {
-        extras.push({ label: 'Marchandise (détail intégral)', valeur: JSON.stringify(m) });
-        continue;
-      }
-      if (y + h > 273) {
+      if (y > 260) {
         doc.addPage();
-        entete();
-        enteteMarchandises(47);
-        y = 54;
+        entete(false);
+        y = enteteTableau(38);
       }
       y += ligneMarchandise(m, y);
     }
   }
+
   if (extras.length) {
     doc.addPage();
-    entete();
-    section('ANNEXE - MENTIONS COMPLÉMENTAIRES', 49);
-    let y = 58;
+    entete(false);
+    section('B', 'MENTIONS COMPLÉMENTAIRES', 38);
+    let y = 46;
     for (const item of extras) {
-      if (y > 260) {
+      if (y > 258) {
         doc.addPage();
-        entete();
-        y = 49;
+        entete(false);
+        y = 38;
       }
-      put(item.label, 11, y, 8, true);
-      y += 5;
-      for (const ligne of lignes(item.valeur, 186, 8)) {
-        if (y > 272) {
+      put(item.label.toUpperCase(), G1, y, { taille: 5.8, gras: true, couleur: GRIS, espace: 0.45 });
+      y += 4.4;
+      for (const ligne of decouper(item.valeur, LARGEUR, 8.4)) {
+        if (y > 270) {
           doc.addPage();
-          entete();
-          y = 49;
+          entete(false);
+          y = 38;
         }
-        put(ligne, 11, y, 8);
-        y += 4;
+        put(ligne, G1, y, { taille: 8.4 });
+        y += 4.4;
       }
-      y += 5;
+      y += 4;
     }
   }
 
-  /* -------------------------- pieds de page ------------------------ */
+  /* -------------------------- pieds de page -------------------------- */
 
   const pages = doc.getNumberOfPages();
   for (let p = 1; p <= pages; p += 1) {
     doc.setPage(p);
-    if (p > 2) put(`${d.dutNumber || 'APERÇU'} | ${state.label}`, 11, 44, 7, true, state.color);
-    doc.setDrawColor(...N);
-    doc.line(11, 280, 199, 280);
-    put(`SHA-256 : ${empreinte.slice(0, 32)}`, 11, 284, 6);
-    put(empreinte.slice(32), 11, 287.5, 6);
-    put(`Impression ${payload.rank} - ${COPIES[payload.copy]}`, 199, 284, 6, true, N, {
-      align: 'right',
+    filet(G1, 276, G2, ENCRE, 0.4);
+    // Marque n° 5 : l'empreinte porte sur le couple document + rang d'impression.
+    put("EMPREINTE D'INTÉGRITÉ SHA-256", G1, 280.4, {
+      taille: 5.4, gras: true, couleur: GRIS, espace: 0.45,
     });
+    put(empreinte.slice(0, 32), G1, 284, { taille: 6, police: 'courier' });
+    put(empreinte.slice(32), G1, 287.4, { taille: 6, police: 'courier' });
+    put('CONTRÔLE', 92, 280.4, { taille: 5.4, gras: true, couleur: GRIS, espace: 0.45 });
     put(
-      `Page ${p} / ${pages} - ${date(payload.generatedAt)} ${heure(payload.generatedAt)}`,
-      199,
-      287.5,
-      6,
-      false,
-      G,
-      { align: 'right' },
+      decouper(
+        'Cette empreinte se recalcule à partir des données du tirage. Elle ne vaut pas ' +
+          'signature : aucune autorité ne la contresigne ici.',
+        52,
+        6,
+      ),
+      92, 284, { taille: 6, interligne: 1.25, couleur: GRIS },
     );
-    put(
-      'POC LOCAL - Les marques visuelles et cette empreinte ne valent pas signature officielle.',
-      11,
-      291,
-      6,
-      false,
-      G,
-    );
-    put(`${(`${d.dutNumber || 'APERÇU'} / OFFICEIVOIRIENDESCHARGEURS / `).repeat(5)}`, 11, 295, 3, false, G);
-    if (p > 2 && state.watermark) {
-      put(state.watermark, 105, 150, 30, true, [225, 226, 230], { align: 'center', angle: 30 });
-    }
+    put(`Généré le ${date(payload.generatedAt)} à ${heure(payload.generatedAt)}`, G2, 280.4, {
+      taille: 6, couleur: GRIS, align: 'right',
+    });
+    put(`Page ${p} / ${pages}`, G2, 284.6, { taille: 8, gras: true, align: 'right' });
+    put(`${COPIES[payload.copy]} · impression ${payload.rank}`, G2, 288.4, {
+      taille: 6, couleur: GRIS, align: 'right',
+    });
+    // Marque n° 7 : micro-texte de bord reprenant le numéro.
+    put(`${`${numero} · OFFICEIVOIRIENDESCHARGEURS · DOCUMENTUNIQUEDETRANSPORT · `.repeat(4)}`, G1, 292.4, {
+      taille: 2.6, couleur: [168, 178, 192],
+    });
+    filigrane(p === 1 ? 100 : 105, p === 1 ? 70 : 150, p === 1 ? 22 : 30);
   }
+
   doc.setProperties({
     title: `DUT ${d.dutNumber || 'Aperçu'} - ${COPIES[payload.copy]}`,
-    subject: `POC Bourse de fret - ${state.label} - SHA-256 ${empreinte}`,
+    subject: `POC Bourse de fret - ${etat.label} - SHA-256 ${empreinte}`,
     author: 'Bourse de fret (B2F) - POC OIC',
-    creator: 'Gabarit DUT recto-verso porté du POC DUT',
+    creator: 'Gabarit DUT recto-verso enrichi',
   });
   return doc;
 }
